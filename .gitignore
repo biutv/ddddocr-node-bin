@@ -1,0 +1,5 @@
+# Build Outputs
+dist
+
+# Dependencies
+node_modules
