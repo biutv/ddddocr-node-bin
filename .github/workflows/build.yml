@@ -35,7 +35,7 @@ jobs:
           github.event_name == 'pull_request_target' && '["macos-latest", "windows-latest", "ubuntu-latest"]' ||
           github.event.inputs.platform == 'all' && '["macos-latest", "windows-latest", "ubuntu-latest"]' ||
           github.event.inputs.platform == 'linux' && '["ubuntu-latest"]' ||
-          github.event.inputs.platform == 'windows' && '["windows-latest"]' ||
+          github.event.inputs.platform == 'windows' && '["windows-latest", "windows-11-arm"]' ||
           github.event.inputs.platform == 'mac' && '["macos-latest"]' ||
           '["macos-latest", "windows-latest", "ubuntu-latest"]'
           ) }}
@@ -78,9 +78,13 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: npm run build:mac
 
-      - name: Build Windows
+      - name: Build Windows x64
         if: matrix.os == 'windows-latest'
-        run: npm run build:win
+        run: npm run build:win:x64
+
+      - name: Build Windows arm64
+        if: matrix.os == 'windows-11-arm'
+        run: npm run build:win:arm64
       
       - name: Rename artifacts
         shell: bash
@@ -89,8 +93,10 @@ jobs:
 
           # Windows artifacts - based on actual file naming pattern
           if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            # Setup installer
             find dist -name "*-x64.exe" -exec cp {} renamed-artifacts/ocr-bin-win-x64-setup.exe \;
+          fi
+
+          if [ "${{ matrix.os }}" == "windows-11-arm" ]; then
             find dist -name "*-arm64.exe" -exec cp {} renamed-artifacts/ocr-bin-win-arm64-setup.exe \;
           fi
 
