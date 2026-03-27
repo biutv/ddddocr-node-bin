@@ -93,11 +93,11 @@ jobs:
 
           # Windows artifacts - based on actual file naming pattern
           if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            find dist -name "*-x64.exe" -exec cp {} renamed-artifacts/ocr-bin-win-x64-setup.exe \;
+            find dist -name "*.exe" -exec cp {} renamed-artifacts/ocr-bin-win-x64-setup.exe \;
           fi
 
           if [ "${{ matrix.os }}" == "windows-11-arm" ]; then
-            find dist -name "*-arm64.exe" -exec cp {} renamed-artifacts/ocr-bin-win-arm64-setup.exe \;
+            find dist -name "*.exe" -exec cp {} renamed-artifacts/ocr-bin-win-arm64-setup.exe \;
           fi
 
           # macOS artifacts
