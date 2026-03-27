@@ -1,69 +1,84 @@
 const express = require('express');
 const { DdddOcr } = require('ddddocr-node');
-const bodyParser = require('body-parser');
-const fs= require('fs');
 const path = require('path');
-const { pipeline } = require('stream/promises');
+const os = require('os');
 
-const app = express();
-const port = 7788;
-var ocr = null;
-
-console.log(process.cwd(), __dirname, process.execPath)
-
-// https://github.com/yao-pkg/pkg?tab=readme-ov-file#error-cannot-execute-binaray-from-snapshot
-const fixOcr = async () => {
-    const ocrOnnxBasePath = path.join(__dirname, 'node_modules/ddddocr-node/onnx');
-
-    const ocrOnnxDir = fs.readdirSync(ocrOnnxBasePath);
-    console.log('模型文件: ', ocrOnnxDir.join(', '));
-    
-    for (const bin of ocrOnnxDir) {
-        const fileName = path.basename(bin);
-        const oldPath = path.join(ocrOnnxBasePath, bin);
-        const file = fs.createWriteStream(fileName);
-        await pipeline(fs.createReadStream(oldPath), file);
-        fs.chmodSync(fileName, 0o755);
-
-        const tmpTxt = fs.readFileSync(fileName, 'utf-8').slice(0, 10);
-        if (!tmpTxt) throw new Error(`模型文件 ${fileName} 修复失败`);
-    }
-    console.log('模型文件修复完成');
-
-    ocr = new DdddOcr();
-    ocr.setRanges(0);
-}
-
-(async () => {
-    await fixOcr();
-})();
-
-
-// 设置中间件 - 使用JSON解析
-app.use(bodyParser.json());
-// 处理POST请求 - 接收JSON格式 {'data': 'base64字符串'}
-app.post('/ocr', async (req, res) => {
-    try {
-        const base64Data = req.body.data;
-        if (!base64Data) {
-            return res.status(400).send({status: -1, msg: '缺少data字段'});
-        }
-        
-        // 使用OCR识别
-        const result = await ocr.classification('data:image/jpg;base64,' + base64Data);
-        console.log('识别结果:', result);
-        
-        // 返回结果
-        res.send({ status: 0, code: result, msg: 'success' });
-    } catch (error) {
-        console.error('OCR识别错误:', error);
-        res.status(500).send({ status: -1, msg: '识别失败: ' + error.message });
-    }
+process.on('uncaughtException', (err) => {
+    console.error('[SYSTEM] 未捕获异常:', err);
 });
 
-// 启动服务器
-app.listen(port, () => {
-    console.log(`OCR服务器已启动，监听端口: ${port}`);
-    console.log(`使用方式: POST请求 http://127.0.0.1:${port}/ocr`);
-    console.log(`请求体格式: {"data": "图片base64数据"}`);
-}); 
+process.on('unhandledRejection', (err) => {
+    console.error('[SYSTEM] Promise异常:', err);
+});
+
+const getEnvNumber = (val, def) => {
+    const n = Number(val);
+    return Number.isFinite(n) ? n : def;
+};
+
+const PORT = getEnvNumber(process.env.PORT, 7788);
+const OCR_MODE = getEnvNumber(process.env.OCR_MODE, 0); // 0-1
+const OCR_RANGE = getEnvNumber(process.env.OCR_RANGE, 6); // 0-7
+
+const app = express();
+let ocrInstance = null;
+
+const isPkg = (process?.pkg?.entrypoint ?? '').includes('snapshot');
+console.log(`[INFO] 运行环境: ${os.platform()}${isPkg ? '打包环境' : '开发环境'}`);
+
+const initOcr = async () => {
+    const ocrOnnxPath = path.join(__dirname, 'node_modules/ddddocr-node/onnx/');
+    console.log(`[OCR] 配置 - 模型: ${OCR_MODE}, 范围: ${OCR_RANGE}, 模型路径: ${ocrOnnxPath}`);
+
+    const ocr = new DdddOcr();
+    ocr.setPath(ocrOnnxPath); // ONNX模型根路径
+    ocr.setOcrMode(OCR_MODE); // 模型 beta
+    ocr.setRanges(OCR_RANGE); // 范围 0-7
+
+    return ocr;
+}
+
+
+const bootstrap = async () => {
+    try {
+        ocrInstance = await initOcr();
+        if (!ocrInstance) {
+            throw new Error('实例初始化失败');
+        }
+
+        app.use(express.json({ limit: '10mb' })); // max 10MB
+
+        app.post('/ocr', async (req, res) => {
+            try {
+                let { data } = req.body || {};
+
+                if (!data) {
+                    return res.status(400).json({ status: -1,  msg: '缺少 data 字段' });
+                }
+
+                if (!data.includes('base64,')) {
+                    data = `data:image/png;base64,${data}`
+                }
+                
+                const result = await ocrInstance.classification(data);
+                console.debug('[OCR] 识别结果:', result);
+                
+                res.send({ status: 0, code: result, msg: 'success' });
+            } catch (err) {
+                console.error('[OCR] 识别错误:', err);
+                res.status(500).send({ status: -1, msg: err.message || '识别失败' });
+            }
+        });
+
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`[OCR] 请求地址: http://127.0.0.1:${PORT}/ocr`);
+            console.log(`[OCR] 使用方式: POST`);
+            console.log(`[OCR] 请求载体: {"data": "图片base64数据"}`);
+        });
+    } catch (err) {
+        console.error('[SYSTEM] 启动失败:', err);
+        process.exit(1);
+    }
+}
+
+bootstrap();

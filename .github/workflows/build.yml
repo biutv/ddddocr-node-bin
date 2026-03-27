@@ -1,37 +1,137 @@
 name: Build/release
-on: [push, pull_request]
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+      platform:
+        description: 'Build platform'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - windows
+          - mac
+          - linux
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
 
     strategy:
-      fail-fast: false
       matrix:
-        include:
-        #   - os: windows-latest
-        #     platform: win
-          - os: macos-latest
-            platform: mac
-          - os: ubuntu-latest
-            platform: linux
+        os: ${{ fromJSON(
+          github.event_name == 'push' && '["macos-latest", "windows-latest", "ubuntu-latest"]' ||
+          github.event_name == 'pull_request_target' && '["macos-latest", "windows-latest", "ubuntu-latest"]' ||
+          github.event.inputs.platform == 'all' && '["macos-latest", "windows-latest", "ubuntu-latest"]' ||
+          github.event.inputs.platform == 'linux' && '["ubuntu-latest"]' ||
+          github.event.inputs.platform == 'windows' && '["windows-latest"]' ||
+          github.event.inputs.platform == 'mac' && '["macos-latest"]' ||
+          '["macos-latest", "windows-latest", "ubuntu-latest"]'
+          ) }}
+      fail-fast: false
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || '' }}
+
+      - name: Get release tag
+        id: get-tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
+            # Extract version from branch name (release/v1.0.0 -> v1.0.0)
+            BRANCH="${{ github.event.pull_request.head.ref }}"
+            echo "tag=${BRANCH#release/}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
       
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
 
       - name: Install dependencies
         run: npm install
       
-      - name: Build
-        run: npm run build:${{ matrix.platform }}
+      - name: Build Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run build:linux
+
+      - name: Build Mac
+        if: matrix.os == 'macos-latest'
+        run: npm run build:mac
+
+      - name: Build Windows
+        if: matrix.os == 'windows-latest'
+        run: npm run build:win
       
+      - name: Rename artifacts
+        shell: bash
+        run: |
+          mkdir -p renamed-artifacts
+
+          # Windows artifacts - based on actual file naming pattern
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            # Setup installer
+            find dist -name "*-x64.exe" -exec cp {} renamed-artifacts/ocr-bin-win-x64-setup.exe \;
+            find dist -name "*-arm64.exe" -exec cp {} renamed-artifacts/ocr-bin-win-arm64-setup.exe \;
+          fi
+
+          # macOS artifacts
+          if [ "${{ matrix.os }}" == "macos-latest" ]; then
+            find dist -name "*-x64" -exec cp {} renamed-artifacts/ocr-bin-mac-x64 \;
+            find dist -name "*-arm64" -exec cp {} renamed-artifacts/ocr-bin-mac-arm64 \;
+          fi
+
+          # Linux artifacts
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            find dist -name "*-x64" -exec cp {} renamed-artifacts/ocr-bin-linux-x64 \;
+            find dist -name "*-arm64" -exec cp {} renamed-artifacts/ocr-bin-linux-arm64 \;
+          fi
+      - name: List files to be uploaded
+        shell: bash
+        run: |
+          echo "准备上传的文件:"
+          if [ -x "$(command -v tree)" ]; then
+            tree renamed-artifacts
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            dir renamed-artifacts
+          else
+            ls -la renamed-artifacts
+          fi
+          echo "总计: $(find renamed-artifacts -type f | wc -l) 个文件"
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.platform }}
-          path: dist/*
+          name: ocr-bin-${{ matrix.os }}
+          path: renamed-artifacts/*
+          retention-days: 3
+          compression-level: 8
+
+      - name: Release
+        uses: ncipollo/release-action@v1
+        with:
+          draft: true
+          allowUpdates: true
+          makeLatest: false
+          tag: ${{ steps.get-tag.outputs.tag }}
+          artifacts: 'renamed-artifacts/*'
+          token: ${{ secrets.GITHUB_TOKEN }}

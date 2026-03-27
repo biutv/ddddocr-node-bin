@@ -3,3 +3,27 @@ dist
 
 # Dependencies
 node_modules
+
+# OS
+.DS_Store
+
+# IDE
+.aider*
+.claude/*
+.claude-code-router/*
+.codebuddy/*
+.cursor/*
+!.claude/skills/
+!.claude/skills/**
+.gemini/*
+.idea/*
+**/.idea/*
+.qwen/*
+.trae/*
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/mcp.json
+!.vscode/settings.json
+.zed/*
+.bitfun/*
