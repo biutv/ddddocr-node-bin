@@ -72,63 +72,50 @@ jobs:
       
       - name: Build Linux
         if: matrix.os == 'ubuntu-latest'
-        run: npm run build:linux
+        run: |
+          rm -rf ./node_modules/onnxruntime-node/bin/napi-v3/{darwin,win32}
+          npm run build:linux
 
       - name: Build Mac
         if: matrix.os == 'macos-latest'
-        run: npm run build:mac
+        run: |
+          rm -rf ./node_modules/onnxruntime-node/bin/napi-v3/{linux,win32}
+          npm run build:mac
 
       - name: Build Windows x64
         if: matrix.os == 'windows-latest'
-        run: npm run build:win:x64
+        shell: bash
+        run: |
+          rm -rf ./node_modules/onnxruntime-node/bin/napi-v3/{darwin,linux}
+          rm -rf ./node_modules/onnxruntime-node/bin/napi-v3/win32/arm64
+          npm run build:win:x64
 
       - name: Build Windows arm64
         if: matrix.os == 'windows-11-arm'
-        run: npm run build:win:arm64
-      
-      - name: Rename artifacts
         shell: bash
         run: |
-          mkdir -p renamed-artifacts
+          rm -rf ./node_modules/onnxruntime-node/bin/napi-v3/{darwin,linux}
+          rm -rf ./node_modules/onnxruntime-node/bin/napi-v3/win32/x64
+          npm run build:win:arm64
 
-          # Windows artifacts - based on actual file naming pattern
-          if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            find dist -name "*.exe" -exec cp {} renamed-artifacts/ocr-bin-win-x64.exe \;
-          fi
-
-          if [ "${{ matrix.os }}" == "windows-11-arm" ]; then
-            find dist -name "*.exe" -exec cp {} renamed-artifacts/ocr-bin-win-arm64.exe \;
-          fi
-
-          # macOS artifacts
-          if [ "${{ matrix.os }}" == "macos-latest" ]; then
-            find dist -name "*-x64" -exec cp {} renamed-artifacts/ocr-bin-mac-x64 \;
-            find dist -name "*-arm64" -exec cp {} renamed-artifacts/ocr-bin-mac-arm64 \;
-          fi
-
-          # Linux artifacts
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            find dist -name "*-x64" -exec cp {} renamed-artifacts/ocr-bin-linux-x64 \;
-            find dist -name "*-arm64" -exec cp {} renamed-artifacts/ocr-bin-linux-arm64 \;
-          fi
       - name: List files to be uploaded
         shell: bash
         run: |
           echo "准备上传的文件:"
           if [ -x "$(command -v tree)" ]; then
-            tree renamed-artifacts
+            tree dist
           elif [ "$RUNNER_OS" == "Windows" ]; then
-            dir renamed-artifacts
+            dir dist
           else
-            ls -la renamed-artifacts
+            ls -la dist
           fi
-          echo "总计: $(find renamed-artifacts -type f | wc -l) 个文件"
+          echo "总计: $(find dist -type f | wc -l) 个文件"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: ocr-bin-${{ matrix.os }}
-          path: renamed-artifacts/*
+          path: dist/*
           retention-days: 3
           compression-level: 8
 
