@@ -61,11 +61,11 @@ jobs:
           else
             echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Install Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: ${{ matrix.os == 'ubuntu-latest' && '20' || '24' }}
 
       - name: Install dependencies
         run: npm install
@@ -126,5 +126,5 @@ jobs:
           allowUpdates: true
           makeLatest: false
           tag: ${{ steps.get-tag.outputs.tag }}
-          artifacts: 'renamed-artifacts/*'
+          artifacts: 'dist/*'
           token: ${{ secrets.GITHUB_TOKEN }}
