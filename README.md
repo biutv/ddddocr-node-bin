@@ -49,18 +49,7 @@ set PORT=9000 && ocr-bin-win-x64.exe # x86_64 指定端口
 ## 示例
 
 ```bash
-# 请求
-curl \
--X POST 'http://127.0.0.1:7788/ocr' \
--H 'Content-Type: application/json' \
--d '{"data":"iVBORw0KGgoAAAANSUhEUgAAAMgAAAA8BAMAAADRdeiiAAAAG1BMVEXz+/58EwXVwb+3h4GoamKZTUPk3t7GpKCKMCTYq4twAAACyUlEQVRYhe1WTW/aQBBdDDEcO6yN9wghND1mgxI4mgaXHOMkKDk6qQJXTJOSI1ZRm5/d2aiB9bBRV2lVqZLfyTua2TczOx9mrECBAgUKFGDzf8DxmSdGubv4iyQLHhrlU978g1vb0YVuHp00jGo9frAtdCeTiQ3HHQAE2jnucKPeKjojkgwtYSUsOBylyTX7LDKaOeLmnZEELEiq893JdO5tBIMAZga9MqQ0jV2FRdeCRPaa7IZD8nJ2U54tTc5AGhBRHKlQPIMyRXYaKJK1804kZN2g14Y+vS4bK5LQisTLkVQ5SN+gN4wv6VvFV91u770FB5MRZyUOzZdzhWerTfI2EANOxTEtt1exMz5TJJuzLwNDCqogtwrCnoRhM5X45k1rXskfbLdjBTCnhDs+aw9H1jwlPtO+sVg5c5pExat51PP4Et99aUdxu/ii3XgTuBAJJybGab0iJOnGZ5IfxJtXkGKtJ9ptqh0lkDKOl9goVHbVW8z3zZOOooUk5+sTuts5zFZk3rsQOiA5a+vioxDVA5tmVJN02rtenwZLtickbe4q1rh49OXWxJGBzYBU2PHjtXEcdgBS2o47grn3Q8wiHfdY2Ik1SfjyffgIcNKF5DanUd69z4DD/Vdqakfijs6RZLCuzj7AcRp4D/ksdNSUOifJqvRnTNY3w+J11DCpFYEv8QuxOGAl/wPkbVsgLtoXWZgzHciGJUkL40WSdSQPs+fdAcd5V0aJijecajIXcFwjSfJ7kvQ5Eqn76I5gaNjnFWif6m47iiSt22zGVvARPZd6tkt+1NxWdPcxPr26MJIDljZs+qTWUOnp66KyNgA0b3DRrHLVNUZX9j6ZNhxFNRg/fYPcX6Nr4sAReUkW1N14fP30PbQgYT38WbHp2mqTSsqqru1Gl3sKgeGZbYDdI0x/NiZMkrdxYIHtvtm0QIECBQr8z/gJ7ZxwY7yr9KAAAAAASUVORK5CYII="}'
-
-# 响应
-# {"status":0,"code":"3445","msg":"success"}
-```
-
-```bash
-# 请求
+# 请求 linux/mac
 curl \
 -X POST 'http://127.0.0.1:7788/ocr' \
 -H 'Content-Type: application/json' \
@@ -68,4 +57,15 @@ curl \
 
 # 响应
 # {"status":0,"code":"G2uB","msg":"success"}
+```
+
+```bash
+# 请求 window command(非powershell)
+curl ^
+-X POST "http://127.0.0.1:7788/ocr" ^
+-H "Content-Type: application/json" ^
+-d "{\"data\":\"iVBORw0KGgoAAAANSUhEUgAAAMgAAAA8BAMAAADRdeiiAAAAG1BMVEXz+/58EwXVwb+3h4GoamKZTUPk3t7GpKCKMCTYq4twAAACyUlEQVRYhe1WTW/aQBBdDDEcO6yN9wghND1mgxI4mgaXHOMkKDk6qQJXTJOSI1ZRm5/d2aiB9bBRV2lVqZLfyTua2TczOx9mrECBAgUKFGDzf8DxmSdGubv4iyQLHhrlU978g1vb0YVuHp00jGo9frAtdCeTiQ3HHQAE2jnucKPeKjojkgwtYSUsOBylyTX7LDKaOeLmnZEELEiq893JdO5tBIMAZga9MqQ0jV2FRdeCRPaa7IZD8nJ2U54tTc5AGhBRHKlQPIMyRXYaKJK1804kZN2g14Y+vS4bK5LQisTLkVQ5SN+gN4wv6VvFV91u770FB5MRZyUOzZdzhWerTfI2EANOxTEtt1exMz5TJJuzLwNDCqogtwrCnoRhM5X45k1rXskfbLdjBTCnhDs+aw9H1jwlPtO+sVg5c5pExat51PP4Et99aUdxu/ii3XgTuBAJJybGab0iJOnGZ5IfxJtXkGKtJ9ptqh0lkDKOl9goVHbVW8z3zZOOooUk5+sTuts5zFZk3rsQOiA5a+vioxDVA5tmVJN02rtenwZLtickbe4q1rh49OXWxJGBzYBU2PHjtXEcdgBS2o47grn3Q8wiHfdY2Ik1SfjyffgIcNKF5DanUd69z4DD/Vdqakfijs6RZLCuzj7AcRp4D/ksdNSUOifJqvRnTNY3w+J11DCpFYEv8QuxOGAl/wPkbVsgLtoXWZgzHciGJUkL40WSdSQPs+fdAcd5V0aJijecajIXcFwjSfJ7kvQ5Eqn76I5gaNjnFWif6m47iiSt22zGVvARPZd6tkt+1NxWdPcxPr26MJIDljZs+qTWUOnp66KyNgA0b3DRrHLVNUZX9j6ZNhxFNRg/fYPcX6Nr4sAReUkW1N14fP30PbQgYT38WbHp2mqTSsqqru1Gl3sKgeGZbYDdI0x/NiZMkrdxYIHtvtm0QIECBQr8z/gJ7ZxwY7yr9KAAAAAASUVORK5CYII=\"}"
+
+# 响应
+# {"status":0,"code":"3445","msg":"success"}
 ```
