@@ -19,6 +19,7 @@ const getEnvNumber = (val, def) => {
 const PORT = getEnvNumber(process.env.PORT, 7788);
 const OCR_MODE = getEnvNumber(process.env.OCR_MODE, 0); // 0-1
 const OCR_RANGE = getEnvNumber(process.env.OCR_RANGE, 6); // 0-7
+const OCR_CHARSET = OCR_RANGE === 7 ? (process.env.OCR_CHARSET || '0123456789+-x/=') : undefined; // 字符集
 
 const app = express();
 let ocrInstance = null;
@@ -28,12 +29,12 @@ console.log(`[INFO] 运行环境: ${os.platform()}${isPkg ? '打包环境' : '�
 
 const initOcr = async () => {
     const ocrOnnxPath = path.join(__dirname, 'node_modules/ddddocr-node/onnx/');
-    console.log(`[OCR] 配置 - 模型: ${OCR_MODE}, 范围: ${OCR_RANGE}, 模型路径: ${ocrOnnxPath}`);
+    console.log(`[OCR] 配置 - 模型: ${OCR_MODE}, 范围: ${OCR_RANGE}${OCR_RANGE === 7 ? `(自定义字符集: ${OCR_CHARSET})` : ''}, 模型路径: ${ocrOnnxPath}`);
 
     const ocr = new DdddOcr();
     ocr.setPath(ocrOnnxPath); // ONNX模型根路径
     ocr.setOcrMode(OCR_MODE); // 模型 beta
-    ocr.setRanges(OCR_RANGE); // 范围 0-7
+    ocr.setRanges(OCR_RANGE === 7 ? OCR_CHARSET : OCR_RANGE); // 范围 0-6 或 自定义字符集
 
     return ocr;
 }

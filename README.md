@@ -22,13 +22,15 @@
   | 4 | 小写a-z + 数字0-9 |
   | 5 | 大写A-Z + 数字0-9 |
   | 6 | 小写a-z + 大写A-Z + 数字0-9 |
+  | 7 | 自定义字符(配合OCR_CHARSET使用), 默认: 0123456789+-x/= |
+- OCR字符集(OCR范围为7时生效): `OCR_CHARSET (字符串)`
 
 ## 启动
 
 ```bash
 # mac
 PORT=9999 ./ocr-bin-macos-arm64 # arm64 指定端口
-./ocr-bin-macos-x64 # x86_64
+OCR_RANGE=7 OCR_CHARSET=G2UB ./ocr-bin-macos-x64 # x86_64 指定模型(自定义字符集)
 
 # linux
 OCR_MODE=1 OCR_RANGE=0 ./ocr-bin-linux-arm64 # arm64 指定模型
