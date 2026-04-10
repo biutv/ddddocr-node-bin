@@ -2,6 +2,7 @@ const express = require('express');
 const { DdddOcr } = require('ddddocr-node');
 const path = require('path');
 const os = require('os');
+const pkg = require('./package.json');
 
 process.on('uncaughtException', (err) => {
     console.error('[SYSTEM] 未捕获异常:', err);
@@ -27,9 +28,20 @@ let ocrInstance = null;
 const isPkg = (process?.pkg?.entrypoint ?? '').includes('snapshot');
 console.log(`[INFO] 运行环境: ${os.platform()}${isPkg ? '打包环境' : '开发环境'}`);
 
+const ocrCharsetMap = {
+    0: '0123456789',
+    1: 'abcdefghijklmnopqrstuvwxyz',
+    2: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    3: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    4: 'abcdefghijklmnopqrstuvwxyz0123456789',
+    5: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+    6: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+};
+const ocrCharset = (OCR_RANGE === 7 ? OCR_CHARSET : ocrCharsetMap[OCR_RANGE]) ?? 'unknown';
+
 const initOcr = async () => {
     const ocrOnnxPath = path.join(__dirname, 'node_modules/ddddocr-node/onnx/');
-    console.log(`[OCR] 配置 - 模型: ${OCR_MODE}, 范围: ${OCR_RANGE}${OCR_RANGE === 7 ? `(自定义字符集: ${OCR_CHARSET})` : ''}, 模型路径: ${ocrOnnxPath}`);
+    console.log(`[OCR] 配置 - 模型: ${OCR_MODE}, 范围: ${OCR_RANGE} (${ocrCharset}), 模型路径: ${ocrOnnxPath}`);
 
     const ocr = new DdddOcr();
     ocr.setPath(ocrOnnxPath); // ONNX模型根路径
@@ -64,11 +76,21 @@ const bootstrap = async () => {
                 const result = await ocrInstance.classification(data);
                 console.debug('[OCR] 识别结果:', result);
                 
-                res.send({ status: 0, code: result, msg: 'success' });
+                res.send({ status: 0, data: { code: result }, msg: 'success' });
             } catch (err) {
                 console.error('[OCR] 识别错误:', err);
                 res.status(500).send({ status: -1, msg: err.message || '识别失败' });
             }
+        });
+
+        app.get('/health', (_req, res) => {
+            const version = pkg.version;
+            const timestamp = Date.now();
+            const charset = ocrCharset;
+
+            const data = { version, charset, timestamp };
+
+            res.send({ status: 0, data, msg: 'ok' });
         });
 
         app.listen(PORT, '0.0.0.0', () => {
