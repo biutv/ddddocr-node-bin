@@ -106,7 +106,7 @@ curl "http://127.0.0.1:7788/ocr" ^
 curl "http://127.0.0.1:7788/ocr" ^
 -X POST ^
 -H "Content-Type: multipart/form-data" ^
--F "data=@C:\Users\xxx\Downloads\yzm.png"  # 文件路径
+-F "data=@C:\Users\xxx\Downloads\yzm.jpeg"  # 文件路径
 
 # {"status":0,"data":{"code":"4pxn"},"msg":"success"} # 响应
 ```
