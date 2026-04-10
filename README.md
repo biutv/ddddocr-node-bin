@@ -45,31 +45,69 @@ set PORT=9000 && ocr-bin-win-x64.exe # x86_64 指定端口
 
 - 请求地址: `http://127.0.0.1:7788/ocr`
 - 请求方法: `POST`
-- 请求头: `{"Content-Type": "application/json"}`
-- 请求体: `{"data": "图片base64字符串(data:image/图片类型;base64含不含均可)"}`
+- 请求方式一: 
+  - 请求头: `{"Content-Type": "application/json"}`
+  - 请求体: `{"data": "图片链接/图片base64字符串"}`
+- 请求方式二:
+  - 请求头: `{"Content-Type": "multipart/form-data"}`
+  - 请求体: `{"data": "图片文件"}`
+
 
 ## 示例
 
 ```bash
-# 请求 linux/mac
-curl \
--X POST 'http://127.0.0.1:7788/ocr' \
+# linux/mac
+
+# 请求方式一
+curl 'http://127.0.0.1:7788/ocr' \
+-X POST \
 -H 'Content-Type: application/json' \
 -d '{"data":"data:image/jpeg;base64,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"}'
 
-# 响应
-# {"status":0,data:{"code":"G2uB"},"msg":"success"}
+# {"status":0,"data":{"code":"G2uB"},"msg":"success"} # 响应
+
+curl 'http://127.0.0.1:7788/ocr' \
+-X POST \
+-H 'Content-Type: application/json' \
+-d '{"data":"https://images2018.cnblogs.com/blog/1047463/201804/1047463-20180406163706898-1017943434.png"}'
+
+# {"status":0,"data":{"code":"0413"},"msg":"success"} # 响应
+
+
+# 请求方式二
+curl 'http://127.0.0.1:7788/ocr' \
+-X POST \
+-H 'Content-Type: multipart/form-data' \
+-F data=@/Users/xxx/Desktop/yzm.jpeg  # 文件路径
+
+# {"status":0,"data":{"code":"4pxn"},"msg":"success"} # 响应
 ```
 
 ```bash
-# 请求 window command(非powershell)
-curl ^
--X POST "http://127.0.0.1:7788/ocr" ^
+# window cmd(非powershell)
+
+# 请求方式一
+curl "http://127.0.0.1:7788/ocr" ^
+-X POST ^
 -H "Content-Type: application/json" ^
 -d "{\"data\":\"iVBORw0KGgoAAAANSUhEUgAAAMgAAAA8BAMAAADRdeiiAAAAG1BMVEXz+/58EwXVwb+3h4GoamKZTUPk3t7GpKCKMCTYq4twAAACyUlEQVRYhe1WTW/aQBBdDDEcO6yN9wghND1mgxI4mgaXHOMkKDk6qQJXTJOSI1ZRm5/d2aiB9bBRV2lVqZLfyTua2TczOx9mrECBAgUKFGDzf8DxmSdGubv4iyQLHhrlU978g1vb0YVuHp00jGo9frAtdCeTiQ3HHQAE2jnucKPeKjojkgwtYSUsOBylyTX7LDKaOeLmnZEELEiq893JdO5tBIMAZga9MqQ0jV2FRdeCRPaa7IZD8nJ2U54tTc5AGhBRHKlQPIMyRXYaKJK1804kZN2g14Y+vS4bK5LQisTLkVQ5SN+gN4wv6VvFV91u770FB5MRZyUOzZdzhWerTfI2EANOxTEtt1exMz5TJJuzLwNDCqogtwrCnoRhM5X45k1rXskfbLdjBTCnhDs+aw9H1jwlPtO+sVg5c5pExat51PP4Et99aUdxu/ii3XgTuBAJJybGab0iJOnGZ5IfxJtXkGKtJ9ptqh0lkDKOl9goVHbVW8z3zZOOooUk5+sTuts5zFZk3rsQOiA5a+vioxDVA5tmVJN02rtenwZLtickbe4q1rh49OXWxJGBzYBU2PHjtXEcdgBS2o47grn3Q8wiHfdY2Ik1SfjyffgIcNKF5DanUd69z4DD/Vdqakfijs6RZLCuzj7AcRp4D/ksdNSUOifJqvRnTNY3w+J11DCpFYEv8QuxOGAl/wPkbVsgLtoXWZgzHciGJUkL40WSdSQPs+fdAcd5V0aJijecajIXcFwjSfJ7kvQ5Eqn76I5gaNjnFWif6m47iiSt22zGVvARPZd6tkt+1NxWdPcxPr26MJIDljZs+qTWUOnp66KyNgA0b3DRrHLVNUZX9j6ZNhxFNRg/fYPcX6Nr4sAReUkW1N14fP30PbQgYT38WbHp2mqTSsqqru1Gl3sKgeGZbYDdI0x/NiZMkrdxYIHtvtm0QIECBQr8z/gJ7ZxwY7yr9KAAAAAASUVORK5CYII=\"}"
 
-# 响应
-# {"status":0,data:{"code":"3445"},"msg":"success"}
+# {"status":0,"data":{"code":"3445"},"msg":"success"} # 响应
+
+curl "http://127.0.0.1:7788/ocr" ^
+-X POST ^
+-H "Content-Type: application/json" ^
+-d "{\"data\":\"https://images2018.cnblogs.com/blog/1047463/201804/1047463-20180406163706898-1017943434.png\"}"
+
+# {"status":0,"data":{"code":"0413"},"msg":"success"} # 响应
+
+# 请求方式二
+curl "http://127.0.0.1:7788/ocr" ^
+-X POST ^
+-H "Content-Type: multipart/form-data" ^
+-F "data=@C:\Users\xxx\Downloads\yzm.png"  # 文件路径
+
+# {"status":0,"data":{"code":"4pxn"},"msg":"success"} # 响应
 ```
 
 ## 📝 许可

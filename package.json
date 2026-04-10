@@ -1,6 +1,6 @@
 {
   "name": "ocr-bin",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
@@ -19,10 +19,11 @@
   "dependencies": {
     "body-parser": "^2.2.2",
     "ddddocr-node": "2.2.0",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "multer": "^2.1.1"
   },
   "devDependencies": {
-    "@yao-pkg/pkg": "^6.14.1"
+    "@yao-pkg/pkg": "^6.14.2"
   },
   "pkg": {
     "assets": [
