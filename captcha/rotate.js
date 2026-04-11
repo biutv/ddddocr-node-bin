@@ -1,5 +1,5 @@
 const cv = require("@techstark/opencv-js");
-const { createCanvas, loadImage } = require("canvas");
+const { Jimp } = require("jimp");
 
 class RotateCaptchaService {
   static instance = null;
@@ -14,18 +14,15 @@ class RotateCaptchaService {
   }
 
   async base64ToMat(base64) {
-    const img = await loadImage(base64);
+    const image = await Jimp.read(
+      Buffer.from(base64.replace(/^data:image\/\w+;base64,/, ""), "base64"),
+    );
 
-    const canvas = createCanvas(img.width, img.height);
-    const ctx = canvas.getContext("2d");
+    const width = image.bitmap.width;
+    const height = image.bitmap.height;
 
-    ctx.drawImage(img, 0, 0);
-
-    const imageData = ctx.getImageData(0, 0, img.width, img.height);
-
-    const mat = new cv.Mat(img.height, img.width, cv.CV_8UC4);
-
-    mat.data.set(imageData.data);
+    const mat = new cv.Mat(height, width, cv.CV_8UC4);
+    mat.data.set(image.bitmap.data);
 
     return mat;
   }
