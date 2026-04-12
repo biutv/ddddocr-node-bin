@@ -103,7 +103,7 @@ const bootstrap = async () => {
           const ccw = result;
           console.debug(`[ROTATE] 识别结果: 顺时针-${cw}, 逆时针-${ccw}`);
 
-          res.send({ status: 0, data: { angle: { cw, ccw } }, msg: "success" });
+          res.send({ status: 0, data: { cw, ccw }, msg: "success" });
         } catch (err) {
           console.error("[ROTATE] 识别错误:", err);
           res.status(500).send({ status: -1, msg: err.message || "识别失败" });
