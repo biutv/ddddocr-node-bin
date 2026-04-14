@@ -20,7 +20,7 @@ on:
     tags:
       - 'v*'
   schedule:
-    - cron: '0 2 * * 0'  # 每周日凌晨2点构建
+    - cron: '0 2 * * 0'
 
 env:
   REGISTRY: ghcr.io
@@ -53,8 +53,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to Docker Hub (可选)
-        if: secrets.DOCKER_USERNAME != ''
+      - name: Check Docker Hub secrets
+        id: check-docker-hub
+        run: |
+          if [ -n "${{ secrets.DOCKER_USERNAME }}" ] && [ -n "${{ secrets.DOCKER_TOKEN }}" ]; then
+            echo "docker_hub_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "docker_hub_available=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Login to Docker Hub
+        if: steps.check-docker-hub.outputs.docker_hub_available == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -81,17 +90,24 @@ jobs:
             echo "platforms=${{ github.event.inputs.platform }}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Prepare Docker tags
+        id: docker-tags
+        run: |
+          TAGS="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.get-tag.outputs.tag }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          
+          if [ "${{ steps.check-docker-hub.outputs.docker_hub_available }}" = "true" ]; then
+            TAGS="$TAGS,${{ secrets.DOCKER_USERNAME }}/ocr-service:${{ steps.get-tag.outputs.tag }},${{ secrets.DOCKER_USERNAME }}/ocr-service:latest"
+          fi
+          
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: ${{ steps.set-platforms.outputs.platforms }}
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.get-tag.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ secrets.DOCKER_USERNAME != '' && format('{0}/ocr-service:{1}', secrets.DOCKER_USERNAME, steps.get-tag.outputs.tag) || '' }}
-            ${{ secrets.DOCKER_USERNAME != '' && format('{0}/ocr-service:latest', secrets.DOCKER_USERNAME) || '' }}
+          tags: ${{ steps.docker-tags.outputs.tags }}
           labels: |
             org.opencontainers.image.title=${{ github.event.repository.name }}
             org.opencontainers.image.description=OCR Recognition Service
