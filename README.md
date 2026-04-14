@@ -2,7 +2,7 @@
 
 - 普通验证码: [ddddocr-node](https://github.com/renhaoyeh/ddddocr-node)
 - 滑块验证码: [ddddocr](https://github.com/sml2h3/ddddocr/blob/master/ddddocr/core/slide_engine.py)
-- 旋转验证码: 嗷呜提供
+- 旋转验证码: [JJBJJ](https://github.com/JJBJJ)提供
 
 ## 环境变量
 
@@ -131,7 +131,7 @@ curl "http://127.0.0.1:7788/ocr" ^
 
 ```bash
 # linux/mac
-# 传url和文件方法同OCR示例
+# 其他请求方法同OCR示例
 
 curl 'http://127.0.0.1:7788/rotate' \
 -X POST \
@@ -145,7 +145,7 @@ curl 'http://127.0.0.1:7788/rotate' \
 
 ```bash
 # linux/mac
-# 传url和文件方法同OCR示例
+# 其他请求方法同OCR示例
 
 curl 'http://127.0.0.1:7788/slide' \
 -X POST \
