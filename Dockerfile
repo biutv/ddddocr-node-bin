@@ -1,75 +1,48 @@
-# Dockerfile - 多架构自动检测版
-FROM alpine:latest
+# Dockerfile - 构建 Node.js 项目
+FROM node:20-alpine AS builder
 
-# 安装运行时依赖
+WORKDIR /app
+
+# 复制依赖文件
+COPY package*.json ./
+COPY package-lock.json ./
+
+# 安装依赖
+RUN npm ci --production=false
+
+# 复制源码
+COPY . .
+
+# 构建项目（如果需要）
+RUN npm run build 2>/dev/null || true
+
+# 运行阶段
+FROM node:20-alpine
+
 RUN apk add --no-cache \
-    ca-certificates \
-    libc6-compat \
-    libgcc \
-    libstdc++ \
-    wget \
-    curl \
+    python3 \
+    make \
+    g++ \
     && rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
-# 复制所有架构的二进制文件
-COPY ocr-bin-linux-amd64 /app/
-COPY ocr-bin-linux-arm64 /app/
-# 如果你的文件名是 x64/arm64，取消下面两行的注释，并注释掉上面两行
-# COPY ocr-bin-linux-x64 /app/
-# COPY ocr-bin-linux-arm64 /app/
+# 从构建阶段复制文件
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/*.js ./
+COPY --from=builder /app/*.json ./
 
-# 创建智能启动脚本，根据宿主机架构自动选择
-RUN cat > /app/start.sh << 'EOF'
-#!/bin/sh
+# 创建非 root 用户
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
 
-ARCH=$(uname -m)
-PORT=${PORT:-7788}
-OCR_MODE=${OCR_MODE:-0}
-OCR_RANGE=${OCR_RANGE:-6}
-OCR_CHARSET=${OCR_CHARSET:-0123456789+-x/=}
-
-export PORT OCR_MODE OCR_RANGE OCR_CHARSET
-
-case "$ARCH" in
-    x86_64|amd64)
-        if [ -f /app/ocr-bin-linux-amd64 ]; then
-            exec /app/ocr-bin-linux-amd64
-        elif [ -f /app/ocr-bin-linux-x64 ]; then
-            exec /app/ocr-bin-linux-x64
-        else
-            echo "No binary found for x86_64"
-            exit 1
-        fi
-        ;;
-    aarch64|arm64)
-        if [ -f /app/ocr-bin-linux-arm64 ]; then
-            exec /app/ocr-bin-linux-arm64
-        else
-            echo "No binary found for arm64"
-            exit 1
-        fi
-        ;;
-    *)
-        echo "Unsupported architecture: $ARCH"
-        exit 1
-        ;;
-esac
-EOF
-
-RUN chmod +x /app/start.sh && chmod +x /app/ocr-bin-linux-* 2>/dev/null || true
-
-# 创建非 root 用户运行，提升安全性
-RUN addgroup -g 1001 -S ocr && \
-    adduser -S ocr -u 1001 && \
-    chown -R ocr:ocr /app
-
-USER ocr
+USER nodejs
 
 EXPOSE 7788
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:7788/health || exit 1
+    CMD node -e "require('http').get('http://localhost:7788/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-ENTRYPOINT ["/app/start.sh"]
+CMD ["node", "index.js"]
