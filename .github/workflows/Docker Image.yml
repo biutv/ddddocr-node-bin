@@ -1,5 +1,4 @@
-# .github/workflows/docker-build.yml
-name: Build Multi-Architecture Docker Image
+name: Build Multi-Arch Docker Image
 
 on:
   workflow_dispatch:
@@ -17,7 +16,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -40,7 +39,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get version tag
+      - name: Get tag
         id: get-tag
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -61,10 +60,8 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.get-tag.outputs.tag }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           labels: |
-            org.opencontainers.image.title=${{ github.event.repository.name }}
-            org.opencontainers.image.description=OCR Recognition Service
+            org.opencontainers.image.title=OCR Service
+            org.opencontainers.image.description=ddddocr-node Binary
             org.opencontainers.image.version=${{ steps.get-tag.outputs.tag }}
-            org.opencontainers.image.created=${{ github.event.repository.created_at }}
-            org.opencontainers.image.revision=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
