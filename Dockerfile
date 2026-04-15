@@ -1,39 +1,35 @@
-# Git
-.git
-.gitignore
-.github
+FROM node:20-alpine AS builder
 
-# Documentation
-README.md
-CHANGELOG.md
-LICENSE
+WORKDIR /app
 
-# Development
-.env
-.env.local
-.vscode
-.idea
-*.log
-*.tmp
+COPY package*.json ./
+COPY package-lock.json ./
 
-# Test files
-test/
-tests/
-*.test.js
+RUN npm ci --production=false
 
-# Build artifacts
-dist/
-build/
-*.exe
-*.dmg
-*.deb
-*.AppImage
+COPY . .
 
-# Docker
-Dockerfile
-.dockerignore
-docker-compose*.yml
+FROM node:20-alpine
 
-# Node
-node_modules/
-npm-debug.log
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/cache/apk/*
+
+WORKDIR /app
+
+COPY --from=builder /app ./
+
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
+
+USER nodejs
+
+EXPOSE 7788
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:7788/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+CMD ["node", "index.js"]
