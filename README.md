@@ -57,7 +57,7 @@ set PORT=9000 && ocr-bin-win-x64.exe # x86_64 指定端口
 
 | 接口      | 方法 | 说明                                                                   |
 | :-------- | :--- | :--------------------------------------------------------------------- |
-| `/ocr`    | POST | 通用验证码识别 (data)                                                  |
+| `/ocr`    | POST | 通用验证码识别 (data, mode, range, charset)                            |
 | `/rotate` | POST | 旋转验证码识别 (thumb, bg)                                             |
 | `/slide`  | POST | 滑动验证码识别 (thumb, bg, type:match(边缘算法)/comparison(差异算法) ) |
 | `/health` | GET  | 健康检查                                                               |

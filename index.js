@@ -4,7 +4,7 @@ const os = require("os");
 
 const { toImageBase64, toNumber } = require("./utils/format");
 
-const { ocrCaptchaService } = require("./captcha/ocr");
+const { ocrCaptchaService, OcrCaptchaService } = require("./captcha/ocr");
 const { rotateCaptchaService } = require("./captcha/rotate");
 const { slideCaptchaService } = require("./captcha/slide");
 
@@ -21,9 +21,9 @@ process.on("unhandledRejection", (err) => {
 const PORT = toNumber(process.env.PORT, 7788);
 const AUTH = process.env.AUTH || "";
 const OCR_MODE = toNumber(process.env.OCR_MODE, 0); // 0-1
-const OCR_RANGE = toNumber(process.env.OCR_RANGE, 6); // 0-7
+const OCR_RANGE = toNumber(process.env.OCR_RANGE, 7); // 0-7
 const OCR_CHARSET =
-  OCR_RANGE === 7 ? process.env.OCR_CHARSET || "0123456789+-x/=" : undefined; // 字符集
+  OCR_RANGE === 7 ? process.env.OCR_CHARSET || "0123456789+-x/" : undefined; // 字符集
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -62,14 +62,24 @@ const bootstrap = async () => {
       async (req, res) => {
         try {
           const data = req.file || req.body?.data;
+          const { range, mode, charset } = req.body;
 
           if (!data) {
             return res.status(400).send({ status: -1, msg: "缺少data字段" });
           }
 
+          let ins = ocrCaptchaService.ocrInstance;
+          if (range !== undefined || mode !== undefined) {
+            OcrCaptchaService.getInstance().init(
+              mode ?? OCR_MODE,
+              range ?? OCR_RANGE,
+              range == 7 ? charset || OCR_CHARSET : undefined,
+            );
+            ins = OcrCaptchaService.getInstance().ocrInstance;
+          }
+
           const imageBase64 = await toImageBase64(data);
-          const result =
-            await ocrCaptchaService.ocrInstance.classification(imageBase64);
+          const result = await ins.classification(imageBase64);
           console.debug(`[OCR] 识别结果: ${result}`);
 
           res.send({
@@ -227,12 +237,16 @@ const bootstrap = async () => {
 
       console.group("接口简述:");
       console.table([
-        { 路径: "/ocr", 方法: "POST", 说明: "通用验证码识别 (data)" },
+        {
+          路径: "/ocr",
+          方法: "POST",
+          说明: "通用验证码识别 (data, mode, range, charset)",
+        },
         { 路径: "/rotate", 方法: "POST", 说明: "旋转验证码识别 (thumb, bg)" },
         {
           路径: "/slide",
           方法: "POST",
-          说明: "滑动验证码识别 (thumb, bg, type:match(边缘算法)/comparison(差异算法))",
+          说明: "滑动验证码识别 (thumb, bg, type: match(边缘算法)/comparison(差异算法))",
         },
         { 路径: "/health", 方法: "GET", 说明: "健康检查" },
       ]);
