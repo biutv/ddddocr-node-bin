@@ -2,6 +2,46 @@ const express = require("express");
 const multer = require("multer");
 const os = require("os");
 
+// ========== 添加时间戳到所有日志 ==========
+const originalLog = console.log;
+const originalDebug = console.debug;
+const originalError = console.error;
+const originalInfo = console.info;
+const originalWarn = console.warn;
+
+const getTimestamp = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const ms = String(now.getMilliseconds()).padStart(3, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${ms}`;
+};
+
+console.log = function(...args) {
+    originalLog(`[${getTimestamp()}]`, ...args);
+};
+
+console.debug = function(...args) {
+    originalDebug(`[${getTimestamp()}]`, ...args);
+};
+
+console.error = function(...args) {
+    originalError(`[${getTimestamp()}]`, ...args);
+};
+
+console.info = function(...args) {
+    originalInfo(`[${getTimestamp()}]`, ...args);
+};
+
+console.warn = function(...args) {
+    originalWarn(`[${getTimestamp()}]`, ...args);
+};
+// ========== 日志增强结束 ==========
+
 const { toImageBase64, toNumber } = require("./utils/format");
 const { authMW } = require("./utils/auth");
 
