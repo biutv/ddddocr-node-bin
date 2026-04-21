@@ -1,6 +1,6 @@
 {
   "name": "ocr-bin",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "type": "commonjs",
   "main": "index.js",
   "homepage": "https://github.com/Hiram-Wong/ddddocr-node-bin",
@@ -25,7 +25,7 @@
     "multer": "^2.1.1"
   },
   "devDependencies": {
-    "@yao-pkg/pkg": "^6.14.2"
+    "@yao-pkg/pkg": "^6.15.0"
   },
   "pkg": {
     "assets": [
